@@ -69,16 +69,24 @@ int main(int argc, char **argv) {
             long cShift = itr->second.getColumnsShift();
             long r = itr->second.getRows();
             long c = itr->second.getColumns();
-            MPI_Isend(&r, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD, &dummy);
-            MPI_Isend(&c, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD, &dummy);
-            MPI_Isend(&rShift, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD, &dummy);
-            MPI_Isend(&cShift, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD, &dummy);
+            if(itr->first != rank) {
+                MPI_Send(&r, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
+                MPI_Send(&c, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
+                MPI_Send(&rShift, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
+                MPI_Send(&cShift, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
+            }else{
+                rows = r;
+                cols = c;
+                rowsShift = rShift;
+                colsShift = cShift;
+            }
         }
+    } else {
+        MPI_Recv(&rows, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        MPI_Recv(&cols, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        MPI_Recv(&rowsShift, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        MPI_Recv(&colsShift, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     }
-    MPI_Recv(&rows, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-    MPI_Recv(&cols, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-    MPI_Recv(&rowsShift, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-    MPI_Recv(&colsShift, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     double *recdata = new double[rows*cols];
     if (rank == 0) {
         for(std::map<int, Mesh>::iterator itr = splited.begin(); itr != splited.end(); ++itr) {
