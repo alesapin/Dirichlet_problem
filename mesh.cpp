@@ -32,7 +32,8 @@ Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols, 
     colsShitf(colsShitf),
     parentRows(parentRows),
     parentCols(parentCols),
-    data(rows, cols, 0){
+    data(rows, cols, 0)
+    {
 }
 
 Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols,  long parentRows, long parentCols, double *data, long rowsShift, long colsShitf):
@@ -56,33 +57,46 @@ Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long parentRows, long 
 PointD Mesh::getPoint(long i, long j) const {
     double dblI = static_cast<double>(i) + rowsShift;
     double dblJ = static_cast<double>(j) + colsShitf;
-    double xcoeff = dblI / getParentRows();
-    double ycoeff = dblJ / getParentCols();
-    double x = rightUpCorner.first * f(xcoeff) + leftDownCorner.first * (1 - f(xcoeff));
-    double y = rightUpCorner.second * f(ycoeff) + leftDownCorner.second * (1 - f(ycoeff));
+    double xcoeff = dblI / (getParentRows() - 1);
+    double ycoeff = dblJ / (getParentCols() - 1);
+    double x = rightUpCorner.first * f(xcoeff);// + leftDownCorner.first * (1 - f(xcoeff));
+    double y = rightUpCorner.second * f(ycoeff);// + leftDownCorner.second * (1 - f(ycoeff));
     return PointD(x,y);
+}
+
+PointD Mesh::getHShtr(long i, long j) const {
+    PointD prevPoint = getPoint(i-1, j-1);
+    PointD curPoint = getPoint(i,j);
+    PointD nextPoint = getPoint(i+1, j+1);
+    double h1 = nextPoint.first - curPoint.first; //x[i+1] - x[i]
+    double h2 = nextPoint.second - curPoint.second; //y[i+1] - y[i]
+    double hprev1 = curPoint.first - prevPoint.first; //x[i] - x[i-1]
+    double hprev2 = curPoint.second - prevPoint.second; //y[i] - y[i-1]
+    double hs1 = (h1 + hprev1) / 2; //h'
+    double hs2 = (h2 + hprev2) / 2; //h'
+    return PointD(hs1,hs2);
 }
 
 double fiveDotScheme(const Mesh &mesh, long i, long j) {
     PointD prevPoint = mesh.getPoint(i-1, j-1);
     PointD curPoint = mesh.getPoint(i,j);
     PointD nextPoint = mesh.getPoint(i+1, j+1);
-    double h1 = nextPoint.first - curPoint.first;
-    double h2 = nextPoint.second - curPoint.second;
-    double hprev1 = curPoint.first - prevPoint.first;
-    double hprev2 = curPoint.second - prevPoint.second;
-    double hs1 = (h1 + hprev1) / 2;
-    double hs2 = (h2 + hprev2) / 2;
+
+    double h1 = nextPoint.first - curPoint.first; //x[i+1] - x[i]
+    double h2 = nextPoint.second - curPoint.second; //y[i+1] - y[i]
+    double hprev1 = curPoint.first - prevPoint.first; //x[i] - x[i-1]
+    double hprev2 = curPoint.second - prevPoint.second; //y[i] - y[i-1]
+    double hs1 = (h1 + hprev1) / 2; //h'
+    double hs2 = (h2 + hprev2) / 2; //h'
 
     double leftPoint = j - 1 < 0 ? mesh.left(i):mesh(i, j-1);
     double rightPoint = j + 1 >= mesh.getColumns() ? mesh.right(i) : mesh(i, j+1);
     double downPoint = i + 1 >= mesh.getRows() ? mesh.down(j):mesh(i+1, j);
     double upPoint = i - 1 < 0 ? mesh.up(j):mesh(i-1, j);
-    double ypart = 1 / hs1 * ((mesh(i,j) - downPoint)/hprev1 - (upPoint - mesh(i,j)/h1));
-    double xpart = 1 / hs2 * ((mesh(i,j) - leftPoint)/hprev2 - (rightPoint - mesh(i,j)/h2));
+    double ypart =  ((mesh(i,j) - upPoint)/hprev1 - (downPoint - mesh(i,j))/h1)/hs1;
+    double xpart = ((mesh(i,j) - leftPoint)/hprev2 - (rightPoint - mesh(i,j))/h2)/hs2;
     return xpart + ypart;
 }
-
 
 std::ostream &operator<< (std::ostream &os, const Mesh& m) {
     for(int i = 0; i<m.getRows(); ++i){
@@ -128,6 +142,30 @@ std::map<int, Mesh> splitMesh(const Mesh &mesh, long procPower) {
        }
        result[procnum++] = Mesh(mesh.leftDownCorner,
                mesh.rightUpCorner, mesh.getRows(), mesh.getColumns(), it->second, r*shiftRows, c*shiftCols);
+    }
+    return result;
+}
+
+std::ostream &dropToStream(std::ostream& os, const Mesh &mesh) {
+    for (long i = 0; i< mesh.getRows(); ++i){
+        for(long j = 0; j < mesh.getColumns(); ++j) {
+            PointD p = mesh.getPoint(i, j);
+            double val = mesh(i,j);
+            os << p.first << "\t" << p.second << "\t" << val <<"\n";
+        }
+    }
+    return os;
+}
+
+Mesh collectMesh(const std::map<int, Mesh> &submeshs) {
+    Mesh first = submeshs.at(0);
+    Mesh result(first.getLeftDownCorner(), first.getRightUpCorner(), first.getParentRows(), first.getParentCols(), first.getParentRows(), first.getParentCols());
+    for(std::map<int, Mesh>::const_iterator itr = submeshs.begin(); itr!=submeshs.end(); ++itr){
+        for(long i = 0; i < itr->second.getRows(); ++i){
+            for(long j = 0; j < itr->second.getColumns(); ++j){
+                result(i+itr->second.getRowsShift(), j + itr->second.getColumnsShift()) = itr->second(i,j);
+            }
+        }
     }
     return result;
 }

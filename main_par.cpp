@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
     double A = 4, B = 4;
-    int totalRows = 2000, totalCols = 2000;
+    int totalRows = 1000, totalCols = 1000;
     long rowsShift, colsShift;
     long rows, cols;
     MPI_Status status;
@@ -115,6 +115,24 @@ int main(int argc, char **argv) {
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
+//    if (rank != 0) {
+//        MPI_Send();
+//    }else{
+//        std::map<int, Mesh> submeshs;
+//        submeshs[0] = curMesh;
+//        std::vector<MPI_Request> requests;
+//        for(int i = 1; i < size; ++i ){
+//            MPI_Request rec;
+//            MPI_Recv(&rows, 1, MPI_LONG, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+//            MPI_Recv(&cols, 1, MPI_LONG, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+//            MPI_Recv(&rowsShift, 1, MPI_LONG, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+//            MPI_Recv(&colsShift, 1, MPI_LONG, i, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+//            double *recIdata = new double[rows*cols];
+//            MPI_Irecv(recIdata, rows*cols, MPI_DOUBLE, i, MPI_ANY_TAG, MPI_COMM_WORLD, &rec);
+//            requests.push_back(rec);
+//            Mesh curMesh(PointUi(0,0), PointUi(A,B), rows, cols, totalRows, totalCols, recdata, rowsShift, colsShift);
+//        }
+//    }
     MPI_Finalize();
     return 0;
 }

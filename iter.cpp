@@ -103,12 +103,14 @@ double CGMPuassonIteratorMPI::iterate(Mesh &pMesh) {
 
     long rows = pMesh.getRows();
     long cols = pMesh.getColumns();
-    double avgerr = 0;
+    double err = 0;
     for (std::size_t i = 0; i < rows ; ++i) {
         for (std::size_t j = 0; j < cols; ++j) {
             if (checkBorder(rMesh, i, j)) {
                 double val = pMesh(i,j) - tau*gMesh(i,j);
-                avgerr += std::fabs(pMesh(i,j) - val);
+                double errV = pMesh(i,j) - val;
+                PointD hs = pMesh.getHShtr(i,j);
+                err += errV*errV*hs.first*hs.second;
                 pMesh(i,j) = val;
             }
         }
@@ -171,8 +173,8 @@ double CGMPuassonIteratorMPI::iterate(Mesh &pMesh) {
     int total_size;
     MPI_Comm_size(MPI_COMM_WORLD, &total_size);
     double total_error = 0;
-    MPI_Allreduce(&avgerr, &total_error, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    return total_error;
+    MPI_Allreduce(&err, &total_error, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    return sqrt(total_error);
 }
 double CGMPuassonIterator::iterate(Mesh &pMesh) {
     if(itercount == 0) {
@@ -181,11 +183,11 @@ double CGMPuassonIterator::iterate(Mesh &pMesh) {
     }
     long rows = pMesh.getRows();
     long cols = pMesh.getColumns();
-    double avgerr;
+    double err;
     for (std::size_t i = 1; i < rows - 1; ++i) {
         for (std::size_t j = 1; j < cols - 1; ++j) {
             double val = pMesh(i,j) - tau*gMesh(i,j);
-            avgerr += (std::fabs(pMesh(i,j) - val));
+            err += (std::fabs(pMesh(i,j) - val));
             pMesh(i,j) = val;
         }
     }
@@ -219,7 +221,7 @@ double CGMPuassonIterator::iterate(Mesh &pMesh) {
     }
     tau = tnumerator / tdenumerator;
     itercount++;
-    return avgerr;
+    return err;
 }
 
 
