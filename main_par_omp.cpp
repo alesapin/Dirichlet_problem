@@ -93,6 +93,7 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD,&size);
     MPI_Comm_rank(MPI_COMM_WORLD,&rank);
 
+    omp_set_num_threads(3);
     long A = pars.a, B = pars.b;
     int totalRows = pars.cols, totalCols = pars.rows;
     long rowsShift, colsShift;
