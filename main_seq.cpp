@@ -30,29 +30,29 @@ int main() {
     int rows = 20, cols = 20;
     Mesh result(PointUi(0,0), PointUi(A,B), rows, cols, rows, cols);
 
-    initMeshBoundaries(result, phi);
-//    std::cerr << "(" <<result.getPoint(1,1).first << ","<< result.getPoint(1,1).second  << ")"<< "\n";
-//    std::cerr << "(" <<result.getPoint(2,1).first << ","<< result.getPoint(2,1).second  << ")"<< "\n";
-//    std::cerr << "(" <<result.getPoint(1,2).first << ","<< result.getPoint(1,2).second  << ")"<< "\n";
-    //std::cerr << fiveDotScheme(result,1,1) << "\n";
-    int iters = 1000;
-    Mesh real(PointUi(0,0), PointUi(A,B), rows, cols, rows, cols);
-    for (long i = 0; i < real.getRows(); ++i) {
-        for (long j = 0; j < real.getColumns(); ++j) {
-            real(i,j) = phi(real.getPoint(i,j));
-        }
-    }
-    std::cerr << "Real:\n";
-    std::cerr << real << "\n";
-//    std::cerr << fiveDotScheme(real, 1, 1) << "\n";
-    initMeshBoundaries(result, phi);
-    CGMPuassonIterator cgm(F, result);
-    for (int i = 0; i < iters; ++i) {
-        cgm.iterate(result);
-        //std::cerr << "RealError: " << i << " Error: " << evaluation(phi, result) << "\n";
-    }
-
-    std::cerr << "result:\n";
-    std::cerr << result << "\n";
+//    initMeshBoundaries(result, phi);
+////    std::cerr << "(" <<result.getPoint(1,1).first << ","<< result.getPoint(1,1).second  << ")"<< "\n";
+////    std::cerr << "(" <<result.getPoint(2,1).first << ","<< result.getPoint(2,1).second  << ")"<< "\n";
+////    std::cerr << "(" <<result.getPoint(1,2).first << ","<< result.getPoint(1,2).second  << ")"<< "\n";
+//    //std::cerr << fiveDotScheme(result,1,1) << "\n";
+//    int iters = 1000;
+//    Mesh real(PointUi(0,0), PointUi(A,B), rows, cols, rows, cols);
+//    for (long i = 0; i < real.getRows(); ++i) {
+//        for (long j = 0; j < real.getColumns(); ++j) {
+//            real(i,j) = phi(real.getPoint(i,j));
+//        }
+//    }
+//    std::cerr << "Real:\n";
+//    std::cerr << real << "\n";
+////    std::cerr << fiveDotScheme(real, 1, 1) << "\n";
+//    initMeshBoundaries(result, phi);
+//    CGMPuassonIterator cgm(F, result);
+//    for (int i = 0; i < iters; ++i) {
+//        cgm.iterate(result);
+//        //std::cerr << "RealError: " << i << " Error: " << evaluation(phi, result) << "\n";
+//    }
+//
+//    std::cerr << "result:\n";
+//    std::cerr << result << "\n";
     return 0;
 }
