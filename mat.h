@@ -1,5 +1,6 @@
 #ifndef _MAT_H_
 #define _MAT_H_
+#define __volatile volatile // defining __volatile to volatile
 #include <tr1/memory>
 #include <map>
 #include <cmath>
