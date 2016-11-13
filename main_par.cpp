@@ -11,7 +11,8 @@
 
 double F(PointD p) {
     double x = p.first;
-    double y = p.second; double mult = sqrt(4 + x*y);
+    double y = p.second;
+    double mult = sqrt(4 + x*y);
     return (x*x + y*y) / (4*mult*mult*mult);
 }
 double phi(PointD p){
@@ -52,7 +53,7 @@ struct Params {
 };
 
 Params getParams(int argc, char** argv) {
-      int c;
+      char c;
       char *opt_val = NULL;
       Params result;
       while ((c = getopt (argc, argv, "a:b:r:c:f:")) != -1) {
@@ -104,16 +105,15 @@ int main(int argc, char **argv) {
     std::map<int, Mesh> splited;
     MPI_Request dummy;
     if (rank == 0) {
-        std::cerr << "Started\n";
         start = MPI_Wtime();
         Mesh result(PointUi(0,0), PointUi(A,B), totalRows, totalCols, totalRows, totalCols);
         initMeshBoundaries(result, phi);
         splited = splitMesh(result, sizePower);
         for(std::map<int, Mesh>::iterator itr = splited.begin(); itr != splited.end(); ++itr) {
-            long r = itr->second.getRows();
-            long c = itr->second.getColumns();
             long rShift = itr->second.getRowsShift();
             long cShift = itr->second.getColumnsShift();
+            long r = itr->second.getRows();
+            long c = itr->second.getColumns();
             if(itr->first != rank) {
                 MPI_Send(&r, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
                 MPI_Send(&c, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
@@ -126,26 +126,20 @@ int main(int argc, char **argv) {
                 colsShift = cShift;
             }
         }
-        std::cerr << "Sended1\n";
     } else {
         MPI_Recv(&rows, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         MPI_Recv(&cols, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         MPI_Recv(&rowsShift, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
         MPI_Recv(&colsShift, 1, MPI_LONG, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     }
-    Mesh curMesh;
+    double *recdata = new double[rows*cols];
     if (rank == 0) {
         for(std::map<int, Mesh>::iterator itr = splited.begin(); itr != splited.end(); ++itr) {
-            if(itr->first != rank) {
-                MPI_Send(itr->second.getData(), itr->second.getRows()*itr->second.getColumns(), MPI_DOUBLE, itr->first, 0, MPI_COMM_WORLD);
-            }
+            MPI_Isend(itr->second.getData(), rows*cols, MPI_DOUBLE, itr->first, 0, MPI_COMM_WORLD, &dummy);
         }
-        curMesh = splited[0]; 
-    } else {
-        double *recdata = new double[rows*cols];
-        MPI_Recv(recdata, rows*cols, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
-        curMesh = Mesh(PointUi(0,0), PointUi(A,B), rows, cols, totalRows, totalCols, recdata, rowsShift, colsShift);
     }
+    MPI_Recv(recdata, rows*cols, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    Mesh curMesh(PointUi(0,0), PointUi(A,B), rows, cols, totalRows, totalCols, recdata, rowsShift, colsShift);
     int procCol = rank%procCols;
     int procRow = (rank - procCol) / procCols;
 
@@ -158,11 +152,11 @@ int main(int argc, char **argv) {
     MPI_Barrier(MPI_COMM_WORLD);
 
     double err = iter.iterate(curMesh);
-    int iterCount = 1;
+    int i = 1;
     while(err > EPSILON) {
         err = iter.iterate(curMesh);
         if (rank == 0) {
-            std::cout <<"Iteration: " << iterCount++ <<" Error: " << err <<"\n";
+            std::cout <<"Iteration: " << i++ <<" Error: " << err <<"\n";
         }
         MPI_Barrier(MPI_COMM_WORLD);
     }
@@ -190,7 +184,7 @@ int main(int argc, char **argv) {
         double elapsed = MPI_Wtime() - start;
         std::ofstream ofs(pars.fname.c_str());
         dropToStream(ofs, result);
-        ofs <<"stats:" <<iterCount <<'\t' <<totalRows << '\t' << totalCols << '\t' << elapsed;
+        ofs <<"stats:" << totalRows << '\t' << totalCols << '\t' << elapsed;
     }
     MPI_Finalize();
     return 0;

@@ -50,6 +50,8 @@ double CGMPuassonIteratorMPI::zeroIteration(Mesh &pMesh) {
     MPI_Allreduce(&numerator, &allNumerator, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     MPI_Allreduce(&denumerator, &allDenumerator, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     tau = allNumerator/allDenumerator;
+    if (rank == 0) {
+    }
     return 100000;
 }
 

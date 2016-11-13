@@ -20,42 +20,17 @@ class Mesh {
         Vec right;
         PointUi leftDownCorner;
         PointUi rightUpCorner;
-        std::vector<std::vector<PointD> >  pointCache;
         long rowsShift, colsShitf, parentRows, parentCols;
         static const double COEFF;
         static const double COEFF_DENOM;
         inline static double f(double t) {
             return (std::pow(1+t, COEFF) - 1) / COEFF_DENOM;
         }
-        PointD countPoint(long i, long j) const;
-        void initPointCache();
     public:
         Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols, long parentRows, long parentCols, long rowsShift=0, long colsShitf=0);
         Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols, long parentRows, long parentCols, double *data, long rowsShift=0, long colsShitf=0);
         Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long parentRows, long parentCols, const Mat &data, long rowsShift =0, long colsShitf = 0);
         Mesh():leftDownCorner(0,0), rightUpCorner(0,0), rowsShift(0), colsShitf(0), parentRows(0),parentCols(0){}
-        Mesh(const Mesh &other):
-            data(other.data),
-            leftDownCorner(other.leftDownCorner), 
-            rightUpCorner(other.rightUpCorner),
-            rowsShift(other.rowsShift),
-            colsShitf(other.colsShitf),
-            parentRows(other.parentRows),
-            parentCols(other.parentCols),
-            pointCache(other.pointCache)
-        {
-        }
-        Mesh &operator=(const Mesh &other) {
-            data = other.data;
-            leftDownCorner = other.leftDownCorner; 
-            rightUpCorner = other.rightUpCorner;
-            rowsShift = other.rowsShift;
-            colsShitf = other.colsShitf;
-            parentRows = other.parentRows;
-            parentCols = other.parentCols;
-            pointCache = other.pointCache;
-            return *this;
-        }
         PointD getPoint(long i, long j) const;
         PointD getHShtr(long i, long j) const;
         double operator()(long i, long j) const {

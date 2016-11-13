@@ -34,7 +34,6 @@ Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols, 
     parentCols(parentCols),
     data(rows, cols, 0)
     {
-    initPointCache();
 }
 
 Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols,  long parentRows, long parentCols, double *data, long rowsShift, long colsShitf):
@@ -45,7 +44,6 @@ Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long rows, long cols, 
     parentRows(parentRows),
     parentCols(parentCols),
     data(data, rows, cols) {
-    initPointCache();
 }
 Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long parentRows, long parentCols, const Mat &data, long rowsShift, long colsShitf):
     leftDownCorner(leftDownCorner),
@@ -55,29 +53,15 @@ Mesh::Mesh(PointUi leftDownCorner, PointUi rightUpCorner, long parentRows, long 
     parentRows(parentRows),
     parentCols(parentCols),
     data(data) {
-    initPointCache();
-}
-
-void Mesh::initPointCache() {
-    for(long i = 0; i < data.rowsCount()+2; ++i ) {
-        pointCache.push_back(std::vector<PointD>(data.colsCount()+2));
-    }
-    for(long i = 0; i < data.rowsCount()+2; ++i){
-        for(long j = 0; j < data.colsCount()+2; ++j){
-            double dblI = static_cast<double>(i-1) + rowsShift;
-            double dblJ = static_cast<double>(j-1) + colsShitf;
-            if(dblI < 0 || dblI > getParentRows()
-                    ||dblJ < 0 || dblJ > getParentCols()) continue;
-            double xcoeff = dblI / (getParentRows() - 1);
-            double ycoeff = dblJ / (getParentCols() - 1);
-            double x = rightUpCorner.first * f(xcoeff);// + leftDownCorner.first * (1 - f(xcoeff));
-            double y = rightUpCorner.second * f(ycoeff);// + leftDownCorner.second * (1 - f(ycoeff));
-            pointCache[i][j] = PointD(x,y);
-        }
-    }
 }
 PointD Mesh::getPoint(long i, long j) const {
-    return pointCache[i+1][j+1];
+    double dblI = static_cast<double>(i) + rowsShift;
+    double dblJ = static_cast<double>(j) + colsShitf;
+    double xcoeff = dblI / (getParentRows() - 1);
+    double ycoeff = dblJ / (getParentCols() - 1);
+    double x = rightUpCorner.first * f(xcoeff);// + leftDownCorner.first * (1 - f(xcoeff));
+    double y = rightUpCorner.second * f(ycoeff);// + leftDownCorner.second * (1 - f(ycoeff));
+    return PointD(x,y);
 }
 
 PointD Mesh::getHShtr(long i, long j) const {
