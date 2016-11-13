@@ -27,13 +27,13 @@ public:
 };
 
 class CGMPuassonIteratorMPI : public IIterator {
-private:
+protected:
     int left, right, up, down;
     Mesh rMesh;
     Mesh gMesh;
-    double zeroIteration(Mesh &pMesh);
-    double tau;
+    virtual double zeroIteration(Mesh &pMesh);
     void getMeshBorders(Mesh &mesh);
+    double tau;
     int rank, size;
     inline bool checkBorder(const Mesh &mesh, long i, long j) {
         return (
@@ -53,4 +53,14 @@ public:
     {}
     virtual double iterate(Mesh &pMesh);
 };
+class CGMPuassonIteratorMPI_OMP : public CGMPuassonIteratorMPI {
+private:
+    double zeroIteration(Mesh &pMesh);
+public:
+    CGMPuassonIteratorMPI_OMP(Function func, const Mesh& m, int rank, int left, int right, int up, int down, int size):
+        CGMPuassonIteratorMPI(func,m,rank,left,right,up,down,size)
+    {}
+    virtual double iterate(Mesh &pMesh);
+};
+
 #endif

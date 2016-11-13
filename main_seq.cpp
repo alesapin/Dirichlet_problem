@@ -2,8 +2,9 @@
 #include <cmath>
 #include "mesh.h"
 #include "iter.h"
-
-
+#include <getopt.h>
+#include <cstdlib>
+#include <fstream>
 double F(PointD p) {
     double x = p.first;
     double y = p.second;
@@ -24,35 +25,64 @@ double evaluation(Function p, const Mesh &m) {
     }
     return diff;
 }
+struct Params {
+    long a;
+    long b;
+    long rows;
+    long cols;
+    std::string fname;
+};
 
-int main() {
-    double A = 4, B = 4;
-    int rows = 20, cols = 20;
-    Mesh result(PointUi(0,0), PointUi(A,B), rows, cols, rows, cols);
+Params getParams(int argc, char** argv) {
+      int c;
+      char *opt_val = NULL;
+      Params result;
+      while ((c = getopt (argc, argv, "a:b:r:c:f:")) != -1) {
+          switch(c) {
+            case 'a':
+                opt_val = optarg;
+                result.a = strtol(opt_val, NULL, 10);
+                break;
+            case 'b':
+                opt_val = optarg;
+                result.b = strtol(opt_val, NULL, 10);
+                break;
+            case 'r':
+                opt_val = optarg;
+                result.rows = strtol(opt_val, NULL, 10);
+                break;
+            case 'c':
+                opt_val = optarg;
+                result.cols = strtol(opt_val, NULL, 10);
+                break;
+            case 'f':
+                opt_val = optarg;
+                result.fname = std::string(opt_val);
+                break;
+          }
+      }
+      return result;
+}
 
-//    initMeshBoundaries(result, phi);
-////    std::cerr << "(" <<result.getPoint(1,1).first << ","<< result.getPoint(1,1).second  << ")"<< "\n";
-////    std::cerr << "(" <<result.getPoint(2,1).first << ","<< result.getPoint(2,1).second  << ")"<< "\n";
-////    std::cerr << "(" <<result.getPoint(1,2).first << ","<< result.getPoint(1,2).second  << ")"<< "\n";
-//    //std::cerr << fiveDotScheme(result,1,1) << "\n";
-//    int iters = 1000;
-//    Mesh real(PointUi(0,0), PointUi(A,B), rows, cols, rows, cols);
-//    for (long i = 0; i < real.getRows(); ++i) {
-//        for (long j = 0; j < real.getColumns(); ++j) {
-//            real(i,j) = phi(real.getPoint(i,j));
-//        }
-//    }
-//    std::cerr << "Real:\n";
-//    std::cerr << real << "\n";
-////    std::cerr << fiveDotScheme(real, 1, 1) << "\n";
-//    initMeshBoundaries(result, phi);
-//    CGMPuassonIterator cgm(F, result);
-//    for (int i = 0; i < iters; ++i) {
-//        cgm.iterate(result);
-//        //std::cerr << "RealError: " << i << " Error: " << evaluation(phi, result) << "\n";
-//    }
-//
-//    std::cerr << "result:\n";
-//    std::cerr << result << "\n";
+const double EPSILON = 0.0001;
+
+int main(int argc, char **argv) {
+    Params pars = getParams(argc, argv);
+    long A = pars.a, B = pars.b;
+    int totalRows = pars.cols, totalCols = pars.rows;
+    Mesh result(PointUi(0,0), PointUi(A,B), totalRows, totalCols, totalRows, totalCols);
+    initMeshBoundaries(result, phi);
+    CGMPuassonIterator cgm(F, result);
+    time_t start,end;
+    time(&start);
+    double error = cgm.iterate(result);
+    int iter = 1;
+    while(error > EPSILON){
+        std::cerr << "RealError: " << (error=cgm.iterate(result)) << " iter: " << iter++ <<"\n";
+    }
+    time (&end);
+    double diff = difftime (end,start);
+    std::ofstream ofs(pars.fname.c_str());
+    ofs << diff << "\n";
     return 0;
 }
