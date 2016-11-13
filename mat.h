@@ -133,8 +133,8 @@ public:
         return result;
     }
     friend std::map<std::pair<int,int>,Mat> split(const Mat& m, long rows, long cols) {
-       long rElem = (long)(m.rowsCount() / (double)rows + 0.5);
-       long cElem = (long)(m.colsCount() / (double)cols + 0.5);
+       long rElem = (long)(m.rowsCount() / (double)rows + 1);
+       long cElem = (long)(m.colsCount() / (double)cols + 1);
        std::map<std::pair<int,int>, Mat> result;
        for(long i = 0; i < rows; ++i){
            for(long j = 0; j < cols; ++j){

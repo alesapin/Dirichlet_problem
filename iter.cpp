@@ -56,38 +56,59 @@ double CGMPuassonIteratorMPI::zeroIteration(Mesh &pMesh) {
 
 void CGMPuassonIteratorMPI::getMeshBorders(Mesh &mesh) {
 
-    MPI_Status status;
-    MPI_Request dummy;
-
+    MPI_Status status[4];
+    MPI_Request send[4];
+    MPI_Request recv[4];
+    std::tr1::shared_ptr<double> upBuf, downBuf, rightBuf, leftBuf;
     if (up >= 0 && up < size) {
-        std::tr1::shared_ptr<double> upBuf(new double[mesh.getColumns()]);
+        upBuf = std::tr1::shared_ptr<double>(new double[mesh.getColumns()]);
         Vec upCur = mesh.getUpRow();
-        MPI_Isend(upCur.memptr(), upCur.size(), MPI_DOUBLE, up, 0, MPI_COMM_WORLD, &dummy);
-        MPI_Recv(upBuf.get(), mesh.getColumns(), MPI_DOUBLE, up, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+        MPI_Isend(upCur.memptr(), upCur.size(), MPI_DOUBLE, up, 0, MPI_COMM_WORLD, &send[0]);
+        MPI_Irecv(upBuf.get(), mesh.getColumns(), MPI_DOUBLE, up, MPI_ANY_TAG, MPI_COMM_WORLD, &recv[0]);
+
+        MPI_Wait(&send[0],&status[0]);
+        MPI_Wait(&recv[0],&status[0]);
+    }
+    if(down >= 0 && down < size) {
+        downBuf = std::tr1::shared_ptr<double> (new double[mesh.getColumns()]);
+        Vec downCur = mesh.getDownRow();
+        MPI_Isend(downCur.memptr(), downCur.size(), MPI_DOUBLE, down, 0, MPI_COMM_WORLD, &send[1]);
+        MPI_Irecv(downBuf.get(), mesh.getColumns(), MPI_DOUBLE, down, MPI_ANY_TAG, MPI_COMM_WORLD, &recv[1]);
+
+        MPI_Wait(&send[1],&status[1]);
+        MPI_Wait(&recv[1],&status[1]);
+    }
+    if (right >= 0 && right < size) {
+        rightBuf = std::tr1::shared_ptr<double> (new double[mesh.getRows()]);
+        Vec rightCur = mesh.getRightCol();
+        MPI_Isend(rightCur.memptr(), rightCur.size(), MPI_DOUBLE, right, 0, MPI_COMM_WORLD, &send[2]);
+        MPI_Irecv(rightBuf.get(), mesh.getRows(), MPI_DOUBLE, right, MPI_ANY_TAG, MPI_COMM_WORLD, &recv[2]);
+
+        MPI_Wait(&send[2],&status[2]);
+        MPI_Wait(&recv[2],&status[2]);
+    }
+    if(left >= 0 && left < size) {
+        leftBuf = std::tr1::shared_ptr<double> (new double[mesh.getRows()]);
+        Vec leftCur = mesh.getLeftCol();
+        MPI_Isend(leftCur.memptr(), leftCur.size(), MPI_DOUBLE, left, 0, MPI_COMM_WORLD, &send[3]);
+        MPI_Irecv(leftBuf.get(), mesh.getRows(), MPI_DOUBLE, left, MPI_ANY_TAG, MPI_COMM_WORLD, &recv[3]);
+
+        MPI_Wait(&send[3],&status[3]);
+        MPI_Wait(&recv[3],&status[3]);
+    }
+    if (upBuf) {
         Vec upR(upBuf, mesh.getColumns());
         mesh.addUp(upR);
     }
-    if(down >= 0 && down < size) {
-        std::tr1::shared_ptr<double> downBuf(new double[mesh.getColumns()]);
-        Vec downCur = mesh.getDownRow();
-        MPI_Isend(downCur.memptr(), downCur.size(), MPI_DOUBLE, down, 0, MPI_COMM_WORLD, &dummy);
-        MPI_Recv(downBuf.get(), mesh.getColumns(), MPI_DOUBLE, down, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    if (downBuf) {
         Vec downR(downBuf, mesh.getColumns());
         mesh.addDown(downR);
     }
-    if (right >= 0 && right < size) {
-        std::tr1::shared_ptr<double> rightBuf(new double[mesh.getRows()]);
-        Vec rightCur = mesh.getRightCol();
-        MPI_Isend(rightCur.memptr(), rightCur.size(), MPI_DOUBLE, right, 0, MPI_COMM_WORLD, &dummy);
-        MPI_Recv(rightBuf.get(), mesh.getRows(), MPI_DOUBLE, right, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    if (rightBuf) {
         Vec rightR(rightBuf, mesh.getRows());
         mesh.addRight(rightR);
     }
-    if(left >= 0 && left < size) {
-        std::tr1::shared_ptr<double> leftBuf(new double[mesh.getRows()]);
-        Vec leftCur = mesh.getLeftCol();
-        MPI_Isend(leftCur.memptr(), leftCur.size(), MPI_DOUBLE, left, 0, MPI_COMM_WORLD, &dummy);
-        MPI_Recv(leftBuf.get(), mesh.getRows(), MPI_DOUBLE, left, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+    if (leftBuf) {
         Vec leftR(leftBuf, mesh.getRows());
         mesh.addLeft(leftR);
     }

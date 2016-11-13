@@ -105,6 +105,8 @@ int main(int argc, char **argv) {
     MPI_Request dummy;
     if (rank == 0) {
         std::cerr << "Started\n";
+        std::cerr << "Totally: " << size << " processors\n";
+        std::cerr << "Splited on: " <<procRows << "x"<<procCols << "\n";
         start = MPI_Wtime();
         Mesh result(PointUi(0,0), PointUi(A,B), totalRows, totalCols, totalRows, totalCols);
         initMeshBoundaries(result, phi);
@@ -114,6 +116,7 @@ int main(int argc, char **argv) {
             long c = itr->second.getColumns();
             long rShift = itr->second.getRowsShift();
             long cShift = itr->second.getColumnsShift();
+            std::cerr << "Processor: " << itr->first << " will get " << r <<"x" << c << " elements\n";
             if(itr->first != rank) {
                 MPI_Send(&r, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
                 MPI_Send(&c, 1, MPI_LONG, itr->first, 0, MPI_COMM_WORLD);
@@ -164,7 +167,6 @@ int main(int argc, char **argv) {
         if (rank == 0) {
             std::cout <<"Iteration: " << iterCount++ <<" Error: " << err <<"\n";
         }
-        MPI_Barrier(MPI_COMM_WORLD);
     }
     if (rank != 0) {
         MPI_Send(&rows, 1, MPI_LONG, 0, 0, MPI_COMM_WORLD);
